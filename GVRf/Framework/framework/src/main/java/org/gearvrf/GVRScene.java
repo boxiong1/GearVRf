@@ -23,6 +23,7 @@ import org.gearvrf.debug.GVRConsole;
 import org.gearvrf.script.GVRScriptBehavior;
 import org.gearvrf.script.IScriptable;
 import org.gearvrf.utility.Log;
+import org.gearvrf.debug.GVRPerformance;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -62,6 +63,10 @@ public class GVRScene extends GVRHybridObject implements PrettyPrint, IScriptabl
     private StringBuilder mStatMessage = new StringBuilder();
     private GVREventReceiver mEventReceiver = new GVREventReceiver(this);
     private GVRSceneObject mSceneRoot;
+
+    public static boolean DEBUG_PERFORMANCE = true; // show performance chart
+    private GVRPerformance mPerformance = null;
+
     /**
      * Constructs a scene with a camera rig holding left & right cameras in it.
      * 
@@ -394,6 +399,30 @@ public class GVRScene extends GVRHybridObject implements PrettyPrint, IScriptabl
                 for (String line : lines)
                     mStatsConsole.writeLine("%s", line);
             }
+        }
+
+        if (DEBUG_PERFORMANCE) {
+            if (mPerformance == null) {
+                mPerformance = new GVRPerformance(getGVRContext(),
+                    GVRPerformance.EyeMode.BOTH_EYES);
+            }
+            if(mPerformance.isUpdated()) {
+                mPerformance.updateHUD();
+            }
+        }
+    }
+
+    public void updatePerformanceData(float fps, int mem, float temp, int cpu, int gpu) {
+        if (DEBUG_PERFORMANCE) {
+            if(fps < 0) {
+                return;
+            }
+
+            if (mPerformance == null) {
+                mPerformance = new GVRPerformance(getGVRContext(),
+                    GVRPerformance.EyeMode.BOTH_EYES);
+            }
+            mPerformance.updateParams(fps, mem, temp, cpu, gpu);
         }
     }
 

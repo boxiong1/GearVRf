@@ -16,6 +16,7 @@
 package org.gearvrf;
 
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.content.pm.ActivityInfo;
 import android.content.res.AssetManager;
 import android.content.res.Configuration;
@@ -368,6 +369,46 @@ public class GVRActivity extends Activity implements IEventReceiver, IScriptable
             mActivityNative.setCameraRig(cameraRig);
         }
     }
+
+    public int getAvailMem() {
+        ActivityManager activityManager = (ActivityManager) this.getSystemService(Activity.ACTIVITY_SERVICE);
+        ActivityManager.MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
+        activityManager.getMemoryInfo(memoryInfo);
+        return (int)(memoryInfo.availMem / (1024 * 1024));
+    }
+
+    public float getCpuTemp() {
+        Process p;
+        try {
+            p = Runtime.getRuntime().exec("cat sys/class/thermal/thermal_zone0/temp");
+            p.waitFor();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+
+            String line = reader.readLine();
+            float temp = Float.parseFloat(line) / 1000.0f;
+
+            return temp;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return 0.0f;
+        }
+    }
+
+    public void updatePerformanceData(float fps) {
+        if(GVRScene.DEBUG_PERFORMANCE) {
+            if(fps < 0) {
+                return;
+            }
+
+            getGVRContext().getMainScene().updatePerformanceData(fps,
+                    getAvailMem(),
+                    31.2f, //getCpuTemp(),  it seems getCpuTemp() decreases fps by 1, need to change it later
+                    this.getAppSettings().getPerformanceParams().getCpuLevel(),
+                    this.getAppSettings().getPerformanceParams().getGpuLevel());
+        }
+    }
+
 
     private long mBackKeyDownTime;
     @Override
